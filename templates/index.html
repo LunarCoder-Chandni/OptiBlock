@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OptiBlock — Smart Block Planning</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="app-shell">
+
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-logo">OB</div>
+        <div>
+          <h1>OptiBlock</h1>
+          <p>Smart block planning prototype</p>
+        </div>
+      </div>
+
+      <div class="top-meta">
+        <span class="live-status"><i></i> Simulation mode</span>
+        <span class="clock" id="clock">--:--:--</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="route-card">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">CORRIDOR VIEW</span>
+            <h2>NDLS — CNB</h2>
+          </div>
+          <div class="route-info">
+            <span>5 sections</span>
+            <span>Double line</span>
+            <span id="route-day">Monday</span>
+          </div>
+        </div>
+
+        <div class="route-map" id="routeMap"></div>
+
+        <div class="route-legend">
+          <span><i class="dot available"></i>Available</span>
+          <span><i class="dot planned"></i>Block planned</span>
+          <span><i class="dot conflict"></i>Needs attention</span>
+        </div>
+      </section>
+
+      <nav class="tabs">
+        <button class="tab active" data-tab="dashboard">Dashboard</button>
+        <button class="tab" data-tab="requests">Requests</button>
+        <button class="tab" data-tab="schedule">Schedule</button>
+        <button class="tab" data-tab="conflicts">Conflicts <b id="conflictBadge">0</b></button>
+      </nav>
+
+      <!-- DASHBOARD -->
+      <section class="tab-panel active" id="dashboard">
+        <div class="hero-row">
+          <div>
+            <span class="eyebrow">AUTOMATIC PLANNING ENGINE</span>
+            <h2>Turn scattered block requests into one coordinated plan.</h2>
+            <p>
+              The prototype combines requests from Track, S&amp;T, TRD/OHE and Operations,
+              checks deadlines and traffic load, then searches for workable block windows.
+            </p>
+          </div>
+          <button class="primary-btn" id="optimizeBtn">Optimize week's plan <span>→</span></button>
+        </div>
+
+        <div class="process-strip">
+          <div><span>01</span> Collect requests</div>
+          <div><span>02</span> Prioritize</div>
+          <div><span>03</span> Combine compatible work</div>
+          <div><span>04</span> Find low-impact windows</div>
+        </div>
+
+        <div class="result-banner" id="resultBanner">
+          <div>
+            <span class="eyebrow">CURRENT PLAN</span>
+            <strong id="resultTitle">Sample schedule loaded</strong>
+            <p id="resultText">Run optimization to simulate the planning cycle.</p>
+          </div>
+          <div class="result-arrow">→</div>
+        </div>
+
+        <div class="metrics" id="metrics"></div>
+
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-title">
+              <div>
+                <span class="eyebrow">COMPARISON</span>
+                <h3>AI-assisted vs manual planning</h3>
+              </div>
+              <span class="muted">same requests</span>
+            </div>
+            <div id="comparison"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-title">
+              <div>
+                <span class="eyebrow">WORKLOAD</span>
+                <h3>Planned block time</h3>
+              </div>
+              <span class="muted">this week</span>
+            </div>
+            <div id="departmentChart"></div>
+          </div>
+        </div>
+
+        <div class="panel reasoning">
+          <div class="panel-title">
+            <div>
+              <span class="eyebrow">WHY A BLOCK IS PLACED</span>
+              <h3>Planning logic</h3>
+            </div>
+          </div>
+          <div class="reason-grid">
+            <div><b>Priority</b><span>Critical assets, deadlines and safety-critical work are considered first.</span></div>
+            <div><b>Coordination</b><span>Compatible work in the same section can share one possession.</span></div>
+            <div><b>Traffic impact</b><span>The engine avoids high-traffic periods where another feasible window exists.</span></div>
+            <div><b>Deadline</b><span>A selected window must finish within the request's allowed planning horizon.</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- REQUESTS -->
+      <section class="tab-panel" id="requests">
+        <div class="panel">
+          <div class="panel-title">
+            <div>
+              <span class="eyebrow">INPUT</span>
+              <h3>Maintenance requests</h3>
+            </div>
+            <span class="muted" id="requestCount">0 requests</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th><th>Department</th><th>Section</th><th>Work</th>
+                  <th>Time</th><th>Deadline</th><th>Priority</th>
+                </tr>
+              </thead>
+              <tbody id="requestTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel add-panel">
+          <div class="panel-title">
+            <div>
+              <span class="eyebrow">TRY IT</span>
+              <h3>Add a maintenance request</h3>
+            </div>
+            <span class="muted">included on next optimization</span>
+          </div>
+
+          <div class="form-grid">
+            <label>Department
+              <select id="fDept">
+                <option value="TRACK">Engineering / Track</option>
+                <option value="ST">Signal &amp; Telecom</option>
+                <option value="TRD">TRD / OHE</option>
+                <option value="OPS">Operations</option>
+              </select>
+            </label>
+            <label>Section
+              <select id="fSection"></select>
+            </label>
+            <label>Work description
+              <input id="fWork" maxlength="52" placeholder="e.g. Rail joint inspection">
+            </label>
+            <label>Duration
+              <input id="fDur" type="number" min="1" max="6" value="2">
+            </label>
+            <label>Deadline
+              <input id="fUrgency" type="number" min="1" max="7" value="4">
+            </label>
+            <label>Criticality
+              <input id="fCrit" type="number" min="1" max="10" value="5">
+            </label>
+            <label>Preferred time
+              <select id="fPref">
+                <option value="night">Night</option>
+                <option value="day">Day</option>
+                <option value="any">Any</option>
+              </select>
+            </label>
+            <label class="check-label">
+              <input id="fSafety" type="checkbox"> Safety-critical
+            </label>
+          </div>
+
+          <div class="form-actions">
+            <button class="primary-btn" id="addRequest">Add &amp; optimize</button>
+            <button class="secondary-btn" id="resetData">Reset sample data</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCHEDULE -->
+      <section class="tab-panel" id="schedule">
+        <div class="panel">
+          <div class="panel-title">
+            <div>
+              <span class="eyebrow">OUTPUT</span>
+              <h3>Weekly block schedule</h3>
+            </div>
+            <span class="muted">click a block for details</span>
+          </div>
+          <div class="day-tabs" id="dayTabs"></div>
+          <div class="timeline-wrap">
+            <div class="timeline" id="timeline"></div>
+          </div>
+          <div class="schedule-note">
+            <span><i class="train-mark"></i>Train movement</span>
+            <span><i class="traffic-mark"></i>Traffic intensity</span>
+            <span><i class="block-mark"></i>Scheduled block</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- CONFLICTS -->
+      <section class="tab-panel" id="conflicts">
+        <div class="panel">
+          <div class="panel-title">
+            <div>
+              <span class="eyebrow">SAFETY CHECK</span>
+              <h3>Conflicts &amp; escalation</h3>
+            </div>
+            <span class="muted" id="conflictCount">0 open</span>
+          </div>
+          <div id="conflictList"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">
+            <div>
+              <span class="eyebrow">BASELINE</span>
+              <h3>What happens without coordination?</h3>
+            </div>
+          </div>
+          <p class="baseline" id="baselineText"></p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>OptiBlock · Functional UI prototype</span>
+      <span>Demo data only — not an operational railway system</span>
+    </footer>
+  </div>
+
+  <aside class="drawer" id="drawer">
+    <button class="drawer-close" id="drawerClose">×</button>
+    <div id="drawerContent"></div>
+  </aside>
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
