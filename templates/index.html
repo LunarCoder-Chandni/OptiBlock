@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OptiBlock — Block Planning Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="shell">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">⛭</div>
+      <div class="brand-text">
+        <h1>OptiBlock</h1>
+        <p>AI-powered automatic block planning — Indian Railways</p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="ps-chip">SIH 2026 · PS&nbsp;26027 · Ministry of Railways</div>
+      <div class="clock" id="clockBox">SYSTEM TIME<br><b id="clockVal">--:--:--</b></div>
+      <button class="theme-toggle" id="themeToggle" type="button">Theme</button>
+    </div>
+  </div>
+
+  <div class="corridor-card">
+    <div class="corridor-head">
+      <h2 id="corridorTitle">NDLS – CNB corridor · 5 block sections · double line</h2>
+      <span>Live section status for <b id="corridorDayLabel" class="mono">Mon</b> — click a day in "AI Schedule" to change</span>
+    </div>
+    <div class="trackline-wrap"><svg id="trackSvg" viewBox="0 0 1000 96" preserveAspectRatio="xMinYMid meet"></svg></div>
+    <div class="trackline-caption">
+      <span><i style="background:var(--green)"></i>Available</span>
+      <span><i style="background:var(--amber)"></i>Under planned block</span>
+      <span><i style="background:var(--red)"></i>Conflict / unresolved</span>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="overview">Overview</button>
+    <button class="tab-btn" data-tab="requests">Block Requests</button>
+    <button class="tab-btn" data-tab="schedule">AI Schedule</button>
+    <button class="tab-btn" data-tab="conflicts">Conflict Center</button>
+  </div>
+
+  <!-- ============ OVERVIEW ============ -->
+  <div class="tab-panel active" id="panel-overview">
+    <div class="run-row">
+      <button class="btn" id="runBtn" type="button">Run AI Optimization</button>
+      <span class="run-note" id="runNote">Loading pending block requests…</span>
+    </div>
+    <div class="log-box" id="logBox"></div>
+
+    <div class="kpi-row" id="kpiRow"><div class="loading-row">Waiting for first optimization run…</div></div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>AI plan vs. siloed manual planning <small>same requests, same corridor</small></h3>
+        <div class="bar-compare" id="compareBars"></div>
+        <div class="legend-inline"><span><i style="background:var(--green)"></i>AI-optimized</span><span><i style="background:var(--text-dim)"></i>Manual / siloed baseline</span></div>
+      </div>
+      <div class="card">
+        <h3>Block-hours by department <small>this week, AI plan</small></h3>
+        <div class="dept-split" id="deptSplit"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>How the engine reasons about a request</h3>
+      <p style="color:var(--text-mid); font-size:12.5px; margin:0;">
+        Every request gets a <b>priority score</b> (asset criticality, deadline urgency, and a safety-critical bonus) computed by
+        the Flask backend. Compatible requests in the same section are checked for <b>fusion</b> into one combined possession,
+        and each surviving request is placed in the lowest traffic-cost window — read against the corridor's actual train
+        timetable — that still respects its deadline. Open any block in the <b>AI Schedule</b> tab to see this reasoning
+        applied to that block.
+      </p>
+    </div>
+  </div>
+
+  <!-- ============ REQUESTS ============ -->
+  <div class="tab-panel" id="panel-requests">
+    <div class="card">
+      <h3>Pending maintenance block requests <small id="reqCount"></small></h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>ID</th><th>Department</th><th>Section</th><th>Work</th><th>Duration</th>
+            <th>Deadline</th><th>Criticality</th><th>Preferred</th><th>Priority score</th>
+          </tr></thead>
+          <tbody id="reqTableBody"><tr><td colspan="9" class="loading-row">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Submit a new block request <small>added requests are sent to the backend and included in the next optimization run</small></h3>
+      <div class="form-grid">
+        <div class="field">
+          <label>Department</label>
+          <select id="fDept">
+            <option value="TRACK">Engineering (Track)</option>
+            <option value="ST">Signal &amp; Telecom</option>
+            <option value="TRD">TRD / OHE</option>
+            <option value="OPS">Traffic / Operations</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Section</label>
+          <select id="fSection"></select>
+        </div>
+        <div class="field">
+          <label>Work description</label>
+          <input id="fWork" type="text" placeholder="e.g. Rail joint inspection" maxlength="48">
+        </div>
+        <div class="field">
+          <label>Duration (hours)</label>
+          <input id="fDur" type="number" min="1" max="6" value="2">
+        </div>
+        <div class="field">
+          <label>Deadline (days from now)</label>
+          <input id="fUrgency" type="number" min="1" max="7" value="4">
+        </div>
+        <div class="field">
+          <label>Asset criticality (1–10)</label>
+          <input id="fCrit" type="number" min="1" max="10" value="5">
+        </div>
+        <div class="field">
+          <label>Preferred window</label>
+          <select id="fPref">
+            <option value="night">Night (traffic-light hours)</option>
+            <option value="day">Day</option>
+            <option value="any">Any</option>
+          </select>
+        </div>
+        <div class="field chk">
+          <input id="fSafety" type="checkbox">
+          <label for="fSafety">Safety-critical</label>
+        </div>
+      </div>
+      <div style="margin-top:14px; display:flex; gap:10px; align-items:center;">
+        <button class="btn" id="addReqBtn" type="button">Add request &amp; re-optimize</button>
+        <button class="btn ghost small" id="resetBtn" type="button">Reset sample data</button>
+        <span class="form-msg err" id="formMsg"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCHEDULE ============ -->
+  <div class="tab-panel" id="panel-schedule">
+    <div class="card">
+      <h3>Weekly block schedule <small>click any block for the AI's reasoning</small></h3>
+      <div class="day-tabs" id="dayTabs"></div>
+      <div class="gantt-scroll"><div class="gantt" id="ganttBody"><div class="loading-row">Run an optimization to see the schedule…</div></div></div>
+      <div class="gantt-legend" id="ganttLegend"></div>
+    </div>
+  </div>
+
+  <!-- ============ CONFLICTS ============ -->
+  <div class="tab-panel" id="panel-conflicts">
+    <div class="card">
+      <h3>Conflict &amp; escalation center <small id="conflictCount"></small></h3>
+      <div id="conflictList"><div class="loading-row">Run an optimization to see conflicts…</div></div>
+    </div>
+    <div class="card">
+      <h3>What manual, siloed planning would have produced</h3>
+      <p style="color:var(--text-mid); font-size:12.5px;" id="baselineNote"></p>
+    </div>
+  </div>
+
+  <footer>
+    <span>Prototype for SIH 2026 · PS 26027 — synthetic demo data, all scheduling runs on the Flask backend (see <code>optimizer.py</code>).</span>
+    <span>NDLS–CNB corridor is illustrative, not an operational plan.</span>
+  </footer>
+</div>
+
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<div class="drawer" id="drawer">
+  <button class="close" id="drawerClose" type="button">✕</button>
+  <div id="drawerContent"></div>
+</div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
