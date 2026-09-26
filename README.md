@@ -111,3 +111,48 @@ OptiBlock's current working prototype is built using a lightweight Python-based 
 | Communication | REST API / JSON | Frontend ↔ Flask backend communication |
 | Version Control | Git | Source-code version management |
 | Repository | GitHub | Project hosting and collaboration |
+
+
+Current architecture
+HTML
+  │
+  ├── CSS
+  │
+  └── JavaScript
+          │
+          │ REST API / JSON
+          ▼
+       Flask
+          │
+          ▼
+       Python
+          │
+          ▼
+   Optimization Engine
+          │
+    ┌─────┼──────────┐
+    ▼     ▼          ▼
+ Priority Fusion   Scheduling
+ Scoring           Engine
+          │
+          ▼
+   Conflict Detection
+          │
+          ▼
+      KPI Analysis
+          │
+          ▼
+     JSON Response
+          │
+          ▼
+     Dashboard
+
+
+The current prototype uses:
+
+Python + Flask for the backend
+HTML + CSS + JavaScript for the frontend
+A Python-based greedy heuristic for optimization
+Synthetic railway/timetable data
+REST APIs with JSON
+In-memory application state
