@@ -112,51 +112,6 @@ OptiBlock's current working prototype is built using a lightweight Python-based 
 | Version Control | Git | Source-code version management |
 | Repository | GitHub | Project hosting and collaboration |
 
-<!-- COPILOT INSTRUCTION:
-Do not modify the architecture diagram's layout or orientation.
-
-Keep the diagram PORTRAIT / VERTICAL.
-Arrange every component from TOP to BOTTOM.
-Arrows must flow DOWNWARD.
-
-Do NOT convert this architecture into a horizontal/landscape layout.
-Preserve the existing vertical architecture exactly.
--->
-Current architecture
-HTML
-  │
-  ├── CSS
-  │
-  └── JavaScript
-          │
-          │ REST API / JSON
-          ▼
-       Flask
-          │
-          ▼
-       Python
-          │
-          ▼
-   Optimization Engine
-          │
-    ┌─────┼──────────┐
-    ▼     ▼          ▼
- Priority Fusion   Scheduling
- Scoring           Engine
-          │
-          ▼
-   Conflict Detection
-          │
-          ▼
-      KPI Analysis
-          │
-          ▼
-     JSON Response
-          │
-          ▼
-     Dashboard
-
-
 The current prototype uses:
 
 Python + Flask for the backend
@@ -165,39 +120,6 @@ A Python-based greedy heuristic for optimization
 Synthetic railway/timetable data
 REST APIs with JSON
 In-memory application state
-
-🔮 Future Development
-
-The current prototype provides the core optimization engine.
-
-Future development can extend the system with:
-
-Data Integration
-Persistent database
-Real railway timetable data
-Historical maintenance data
-Asset database integration
-Advanced Scheduling
-More railway-specific constraints
-Dynamic rescheduling
-Advanced optimization algorithms
-Real-time traffic information
-User Management
-Role-based access
-Requester interface
-Planner interface
-Manager approval workflow
-Execution Tracking
-Mobile-friendly execution interface
-Start/end work tracking
-OTP-based verification
-Actual block utilization recording
-Analytics
-Historical utilization
-Maintenance performance
-Resource utilization
-Scheduling efficiency
-Predictive maintenance integration
 
 ⚠️ Current Limitations
 
