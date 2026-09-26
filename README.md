@@ -24,6 +24,39 @@ When multiple departments request blocks independently, this can result in:
 OptiBlock addresses this through automated request analysis, work fusion, traffic-aware scheduling, and conflict detection.
 
 ---
+## 📌 Problem
+
+Railway maintenance activities require specific blocks during which railway assets such as tracks, signals, and other infrastructure can be taken out of service.
+
+Planning these blocks manually can be difficult because multiple factors need to be considered simultaneously:
+
+- Train movement and operational schedules
+- Maintenance requirements
+- Asset availability
+- Block duration
+- Conflicting maintenance activities
+- Operational constraints
+- Limited maintenance windows
+
+Poorly planned blocks can result in unnecessary asset downtime, conflicts between maintenance activities, and disruption to railway operations.
+
+**OptiBlock aims to provide an automated and data-driven approach to this problem.**
+
+---
+
+## 💡 Solution
+
+OptiBlock takes maintenance and operational information as input and processes it through an optimization-based planning engine.
+
+The system:
+
+1. Accepts maintenance and operational data.
+2. Identifies available block windows.
+3. Evaluates conflicts and constraints.
+4. Prioritizes maintenance activities.
+5. Generates an optimized block plan.
+6. Displays the resulting schedule through a web interface.
+
 
 # Core Concept
 
