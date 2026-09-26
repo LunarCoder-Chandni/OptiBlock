@@ -114,38 +114,25 @@ OptiBlock's current working prototype is built using a lightweight Python-based 
 
 
 Current architecture
-HTML
-  │
-  ├── CSS
-  │
-  └── JavaScript
-          │
-          │ REST API / JSON
-          ▼
-       Flask
-          │
-          ▼
-       Python
-          │
-          ▼
-   Optimization Engine
-          │
-    ┌─────┼──────────┐
-    ▼     ▼          ▼
- Priority Fusion   Scheduling
- Scoring           Engine
-          │
-          ▼
-   Conflict Detection
-          │
-          ▼
-      KPI Analysis
-          │
-          ▼
-     JSON Response
-          │
-          ▼
-     Dashboard
+```text
+User
+↓
+Block Requests
+↓
+Priority Engine
+↓
+Compatibility / Fusion Engine
+↓
+Traffic Analysis
+↓
+Constraint-Aware Scheduler
+↓
+Conflict Detection
+↓
+KPI Calculation
+↓
+Dashboard
+```
 
 
 The current prototype uses:
