@@ -1,112 +1,80 @@
-# OptiBlock
+# OptiBlock 🚆
 
-AI-powered railway block-planning prototype — built for **SIH 2026, Problem Statement 26027**
-("AI-Powered Automatic Block Planning to Maximize Asset Availability for Train Operations on
-Indian Railways", Ministry of Railways).
+### Intelligent Automatic Block Planning System
 
-OptiBlock takes pending maintenance **block requests** from four departments (Track/Engineering,
-Signal & Telecom, TRD/OHE, Traffic/Operations), scores them by priority and risk, fuses compatible
-requests into shared possessions, and schedules every request into the lowest-disruption time
-window on a synthetic weekly corridor timetable — instead of each department booking blind and
-independently, which is today's problem.
+OptiBlock is an explainable, optimization-based railway block planning system designed to coordinate maintenance activities and identify suitable time windows with minimal disruption to train operations.
 
-## What's actually running
+The system analyzes maintenance requests, evaluates their priority and constraints, identifies compatible work that can be performed together, and generates an optimized block schedule based on railway traffic conditions.
 
-```
-Browser (dashboard)  ──fetch──▶  Flask REST API  ──▶  optimizer.py (pure Python)
-   templates/index.html            app.py              priority scoring · fusion pass
-   static/css, static/js                                greedy constrained scheduler
-                                                          siloed-baseline comparison
-```
+---
 
-- **Frontend**: a single dashboard (`templates/index.html` + `static/js/app.js`) with four tabs —
-  Overview, Block Requests, AI Schedule (a weekly Gantt view with a live traffic heatmap), and a
-  Conflict Center. Every block is clickable and shows *why* the engine put it there.
-- **Backend**: Flask (`app.py`) exposing a small REST API. All the "AI" — scoring, fusion,
-  scheduling, conflict detection, the manual-baseline comparison — runs in `optimizer.py` and is
-  fully deterministic and inspectable (no external ML service, no API keys required).
-- **Data**: synthetic. A 5-section corridor (NDLS–GZB–ALJN–TDL–ETW–CNB) with a generated weekly
-  train timetable (Rajdhani/Shatabdi, Superfast/Express, Passenger/MEMU, Freight) and 14 seed
-  maintenance requests. This is stated on the dashboard itself — real operational data (BDMS/COA
-  feeds) was not available for this prototype.
+## Overview
 
-## Running it (Replit or locally)
+Railway maintenance requires temporary blocks during which a section of railway infrastructure is made available for maintenance work.
 
-```bash
-pip install -r requirements.txt
-python app.py
-```
+When multiple departments request blocks independently, this can result in:
 
-Then open the app (Replit will open it automatically; locally it's `http://127.0.0.1:5000`).
+- Overlapping maintenance requests
+- Underutilized block windows
+- Unnecessary track possession time
+- Conflicts between departments
+- High-traffic maintenance windows
+- Idle maintenance resources
 
-## API
+OptiBlock addresses this through automated request analysis, work fusion, traffic-aware scheduling, and conflict detection.
 
-| Method | Route                  | Purpose                                                             |
-|--------|-------------------------|----------------------------------------------------------------------|
-| GET    | `/`                     | Renders the dashboard                                               |
-| GET    | `/api/meta`              | Corridor, stations, departments, train timetable, traffic matrix     |
-| GET    | `/api/requests`           | Current pending block requests with computed priority score         |
-| POST   | `/api/requests`           | Add a new block request `{dept, section, work, dur, urgency, crit, safety, pref}` |
-| POST   | `/api/requests/reset`      | Reset requests back to the 14 seed examples                         |
-| POST   | `/api/optimize`           | Runs the full pipeline; returns the AI plan, conflicts, baseline, and KPIs |
+---
 
-State is held in memory in `app.py` (`STATE`) — fine for a single demo session; see Roadmap below
-for what changes if this needs to survive restarts or serve multiple concurrent users.
+# Core Concept
 
-## The algorithm (`optimizer.py`)
+The central idea behind OptiBlock is to avoid treating every maintenance request as an isolated task.
 
-1. **Priority score** per request = `4 × criticality + 3 × (10 − urgency_days) + 15 if safety-critical`.
-2. **Fusion pass**: requests in the same section, both preferring night hours, from compatible
-   departments (Track+S&T, Track+TRD, S&T+TRD), with combined duration ≤ 6h, are merged into one
-   possession — this is the "combine compatible works" strategy that gives the biggest disruption
-   reduction in real block planning.
-3. **Greedy constrained scheduling**: highest-priority requests are placed first, each into the
-   lowest traffic-cost window (read off an hourly train-density model for its section) that still
-   lands before its deadline and doesn't clash with an already-booked window.
-4. **Baseline comparison**: a second, deliberately naive scheduler books each original request at
-   its department's earliest preferred slot on day one, with *no* visibility into what other
-   departments booked — this reproduces today's siloed-planning problem and is what the dashboard
-   compares the AI plan against.
+Instead, the system:
 
-## Why this scope, and not the full stack described in the project brief
+Maintenance Requests
+        ↓
+Priority Analysis
+        ↓
+Compatibility Detection
+        ↓
+Work Fusion
+        ↓
+Traffic Analysis
+        ↓
+Constraint-Aware Scheduling
+        ↓
+Conflict Detection
+        ↓
+Optimized Block Plan
 
-The original project brief sketches a full production system — React + Vite, FastAPI, PostgreSQL,
-JWT auth, OR-Tools, Docker, RBAC, audit logs, ML duration prediction, Leaflet maps. That's a
-legitimate target architecture, but building all of it is a multi-month engineering effort, and
-none of it is what actually gets judged in an SIH prototype demo. This build deliberately
-implements the brief's own **Phase 1**: *"Rule-based conflict engine + optimization algorithm"*,
-with a clean, real (not mocked) backend and a frontend good enough to demo and screenshot for the
-PPT. Concretely:
+The goal is to maximize asset availability while ensuring that maintenance activities are scheduled within feasible operational windows.
 
-- No database — in-memory state is enough for a demo session and removes a whole class of setup
-  friction on Replit.
-- No auth/RBAC — not needed to demonstrate the optimization logic itself.
-- No OR-Tools/ML — the greedy constrained scheduler is real optimization logic (not an `if/else`
-  stub), is fast, fully explainable, and easy to defend in a judge Q&A. OR-Tools (CP-SAT) is a
-  reasonable upgrade once the constraint model is finalized (see Roadmap).
-- Plain Flask instead of FastAPI/React — matches the Replit project you already had, and avoids a
-  rewrite before the deadline.
+---
 
-## Roadmap (if you keep building after submission)
+## 🎯 Key Objectives
 
-- **Phase 2**: PostgreSQL + SQLAlchemy models for `Train`, `Section`, `BlockRequest`, `Block`,
-  matching section 10 of the original brief; swap `STATE` (in-memory dict) for real persistence.
-- **Phase 3**: Replace/augment the greedy scheduler with Google OR-Tools CP-SAT for provably
-  optimal (not just good) placements once you have a finalized constraint set; add an ML model to
-  predict maintenance duration from historical data instead of using a fixed estimate.
-- **Phase 4**: Auth (JWT), role-based views (Planner/Approver/Viewer), audit log on approvals, and
-  a map view (Leaflet) alongside the existing Gantt view.
+- Automate railway block planning.
+- Reduce manual planning effort.
+- Minimize conflicts between maintenance activities.
+- Improve utilization of available maintenance windows.
+- Reduce unnecessary asset downtime.
+- Prioritize critical maintenance activities.
+- Provide a clear and understandable planning interface.
 
-## Project structure
+  # 🛠️ Current Technology Stack
 
-```
-optiblock/
-├── app.py              # Flask routes / REST API
-├── optimizer.py         # scoring, fusion, scheduling, baseline, KPIs — pure Python
-├── requirements.txt
-├── templates/
-│   └── index.html        # dashboard shell
-└── static/
-    ├── css/style.css      # design system
-    └── js/app.js           # fetches the API and renders the dashboard
-```
+OptiBlock's current working prototype is built using a lightweight Python-based architecture.
+
+| Layer | Technology | Purpose |
+|---|---|---|
+| Frontend | HTML5 | Dashboard structure and UI |
+| Styling | CSS3 | Dashboard layout, components and visual styling |
+| Client-side Logic | JavaScript | API communication, interactions and dynamic rendering |
+| Backend | Python | Core application and server-side processing |
+| Web Framework | Flask | REST API and web application |
+| Optimization Engine | Python | Priority scoring, compatibility analysis, block fusion and scheduling |
+| Scheduling Approach | Greedy Heuristic | Priority-based constraint-aware scheduling |
+| Data | Synthetic Railway Data | Demonstration timetable, sections, trains and maintenance requests |
+| Communication | REST API / JSON | Frontend ↔ Flask backend communication |
+| Version Control | Git | Source-code version management |
+| Repository | GitHub | Project hosting and collaboration |
